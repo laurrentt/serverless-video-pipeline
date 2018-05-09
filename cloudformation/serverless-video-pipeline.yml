@@ -1,0 +1,27 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Defines the serverless-video-pipeline micro-service resources (must be merged with sam.json)
+Parameters:
+  Environment:
+    Type: String
+    Description: Environment name (select from allowed values)
+    AllowedValues:
+    - prod
+    - stage
+    - dev
+
+Resources:
+  Transcoder:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: transcoder.yml
+      Parameters:
+        Environment: !Ref Environment
+
+  StateMachine:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: state-machine.yml
+      Parameters:
+        Environment: !Ref Environment
+        TranscoderPipelineId: !GetAtt Transcoder.Outputs.TranscoderPipelineId
