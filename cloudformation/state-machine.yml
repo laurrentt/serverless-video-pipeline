@@ -1,0 +1,161 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Defines the state-machine for the serverless-video-pipeline
+Parameters:
+  Environment:
+    Type: String
+    Description: Environment name (select from allowed values)
+    AllowedValues:
+    - prod
+    - stage
+    - dev
+
+  TranscoderPipelineId:
+    Type: String
+
+
+Resources:
+  CreateJobLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: CreateTranscoderJob
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - elastictranscoder:CreateJob
+            Resource:
+            - !Sub 'arn:aws:elastictranscoder:${AWS::Region}:${AWS::AccountId}:pipeline/${TranscoderPipelineId}'
+            - !Sub 'arn:aws:elastictranscoder:${AWS::Region}:${AWS::AccountId}:preset/*'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  CreateJobHandler:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: create_job.lambda_handler
+      Environment:
+        Variables:
+          TRANSCODER_PIPELINE_ID: !Ref TranscoderPipelineId
+      Role: !GetAtt CreateJobLambdaRole.Arn
+      Code: state-machine-lambdas/create_job.py
+      Runtime: python3.6
+
+  ReadJobLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: ReadTranscoderJob
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - elastictranscoder:ReadJob
+            Resource: '*'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  ReadJobHandler:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: read_job.lambda_handler
+      Role: !GetAtt ReadJobLambdaRole.Arn
+      Code: state-machine-lambdas/read_job.py
+      Runtime: python3.6
+
+  StatesExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - !Sub states.${AWS::Region}.amazonaws.com
+            Action: sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: StatesExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                - !GetAtt CreateJobHandler.Arn
+                - !GetAtt ReadJobHandler.Arn
+
+  TranscoderStateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      RoleArn: !GetAtt StatesExecutionRole.Arn
+      DefinitionString: !Sub |-
+        {
+          "Comment": "State machine for transcoding videos",
+          "StartAt": "CreateJob",
+          "States": {
+            "CreateJob": {
+              "Type": "Task",
+              "Resource": "${CreateJobHandler.Arn}",
+              "Next": "HandleJobStatus"
+            },
+            "HandleJobStatus": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.Job.Status",
+                  "StringEquals": "Complete",
+                  "Next": "Success"
+                },
+                {
+                  "Variable": "$.Job.Status",
+                  "StringEquals": "Error",
+                  "Next": "Failure"
+                }
+              ],
+              "Default": "WaitThenReadJob"
+            },
+            "WaitThenReadJob": {
+              "Type": "Wait",
+              "Seconds": 5,
+              "Next": "ReadJob"
+            },
+            "ReadJob": {
+              "Type": "Task",
+              "Resource": "${ReadJobHandler.Arn}",
+              "Next": "HandleJobStatus"
+            },
+            "Failure": {
+              "Type": "Fail",
+              "Error": "DefaultStateError",
+              "Cause": "Transcoder job failed"
+            },
+            "Success": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        }
