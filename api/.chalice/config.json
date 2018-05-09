@@ -1,0 +1,16 @@
+{
+  "version": "2.0",
+  "app_name": "serverless-video-pipeline-api",
+  "stages": {
+    "dev": {
+      "api_gateway_stage": "dev",
+      "manage_iam_role": true,
+      "environment_variables": {
+        "DEBUG": "true",
+        "TRANSCODER_BUCKET": "dev-serverless-video-pipeline-tr-transcoderbucket-1lhruzfpw1kkd",
+        "STATE_MACHINE_ARN": "arn:aws:states:us-east-1:913346084261:stateMachine:TranscoderStateMachine-WO9jWMZzGa2N",
+        "STATE_MACHINE_EXECUTION_BASE_ARN": "arn:aws:states:us-east-1:913346084261:execution:TranscoderStateMachine-WO9jWMZzGa2N:"
+      }
+    }
+  }
+}
