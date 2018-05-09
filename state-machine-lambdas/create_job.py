@@ -10,11 +10,11 @@ ELASTIC_TRANSCODER_PRESET_IDS = {
 
 
 def lambda_handler(event, _):
-    generated_output_id = str(uuid.uuid4())
+    unique_id = event['UniqueId']
 
     outputs = [
         {
-            'Key': f'outputs/{generated_output_id}/out_400K',
+            'Key': f'outputs/{unique_id}/out_400K',
             'PresetId': ELASTIC_TRANSCODER_PRESET_IDS['HLS_400K'],
             'SegmentDuration': '10',
             'Watermarks': [
@@ -25,7 +25,7 @@ def lambda_handler(event, _):
             ]
         },
         {
-            'Key': f'outputs/{generated_output_id}/out_2M',
+            'Key': f'outputs/{unique_id}/out_2M',
             'PresetId': ELASTIC_TRANSCODER_PRESET_IDS['HLS_2M'],
             'SegmentDuration': '10',
             'Watermarks': [
@@ -37,15 +37,17 @@ def lambda_handler(event, _):
         }
     ]
 
+    playlist_output_file = f'outputs/{unique_id}/out'
+
     create_job_response = boto3.client('elastictranscoder').create_job(
         PipelineId=os.environ['TRANSCODER_PIPELINE_ID'],
         Input={
-            'Key': event['Input']['Key']
+            'Key': f'inputs/{unique_id}'
         },
         Outputs=outputs,
         Playlists=[
             {
-                'Name': f'outputs/{generated_output_id}/out',
+                'Name': playlist_output_file,
                 'Format': 'HLSv3',
                 'OutputKeys': [o['Key'] for o in outputs],
             }
@@ -53,5 +55,6 @@ def lambda_handler(event, _):
     )
 
     event['Job'] = create_job_response['Job']
+    event['PlaylistOutputKey'] = playlist_output_file
 
     return event

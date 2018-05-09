@@ -1,0 +1,50 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:*:*:*",
+      "Effect": "Allow"
+    },
+    {
+      "Action": [
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::dev-serverless-video-pipeline-tr-transcoderbucket-1lhruzfpw1kkd"
+      ],
+      "Effect": "Allow"
+    },
+    {
+      "Action": [
+        "s3:PutObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::dev-serverless-video-pipeline-tr-transcoderbucket-1lhruzfpw1kkd/*"
+      ],
+      "Effect": "Allow"
+    },
+    {
+      "Action": [
+        "states:StartExecution"
+      ],
+      "Resource": [
+        "arn:aws:states:us-east-1:913346084261:stateMachine:TranscoderStateMachine-WO9jWMZzGa2N"
+      ],
+      "Effect": "Allow"
+    },
+    {
+      "Action": [
+        "states:DescribeExecution"
+      ],
+      "Resource": [
+        "arn:aws:states:us-east-1:913346084261:execution:TranscoderStateMachine-WO9jWMZzGa2N:*"
+      ],
+      "Effect": "Allow"
+    }
+  ]
+}
