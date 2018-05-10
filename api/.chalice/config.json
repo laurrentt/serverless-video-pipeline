@@ -11,6 +11,22 @@
         "STATE_MACHINE_ARN": "arn:aws:states:us-east-1:913346084261:stateMachine:TranscoderStateMachine-WO9jWMZzGa2N",
         "STATE_MACHINE_EXECUTION_BASE_ARN": "arn:aws:states:us-east-1:913346084261:execution:TranscoderStateMachine-WO9jWMZzGa2N:"
       }
+    },
+    "stage": {
+      "api_gateway_stage": "stage",
+      "environment_variables": {
+        "TRANSCODER_BUCKET": "PLACEHOLDER",
+        "STATE_MACHINE_ARN": "PLACEHOLDER",
+        "STATE_MACHINE_EXECUTION_BASE_ARN": "PLACEHOLDER"
+      }
+    },
+    "prod": {
+      "api_gateway_stage": "prod",
+      "environment_variables": {
+        "TRANSCODER_BUCKET": "PLACEHOLDER",
+        "STATE_MACHINE_ARN": "PLACEHOLDER",
+        "STATE_MACHINE_EXECUTION_BASE_ARN": "PLACEHOLDER"
+      }
     }
   }
 }

@@ -101,19 +101,13 @@ Resources:
             - elastictranscoder:CreatePipeline
             - elastictranscoder:UpdatePipeline
             - elastictranscoder:DeletePipeline
-            - elastictranscoder:CreatePreset
-            - elastictranscoder:DeletePreset
-            - elastictranscoder:ListPresets
-            - elastictranscoder:ReadPreset
             Resource: "*"
-          - Effect: Allow
-            Action:
-            - logs:*
-            Resource: arn:aws:logs:*:*:*
           - Effect: Allow
             Action:
             - iam:PassRole
             Resource: !GetAtt TranscoderPipelineRole.Arn
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
   ElasticTranscoderCustomResourceLambdaFunction:
     Type: AWS::Lambda::Function

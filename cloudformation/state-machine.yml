@@ -159,3 +159,10 @@ Resources:
             }
           }
         }
+
+Outputs:
+  TranscoderStateMachineArn:
+    Value: !Ref TranscoderStateMachine
+
+  TranscoderStateMachineExecutionBaseArn:
+    Value: !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:execution:${TranscoderStateMachine.Name}:'
