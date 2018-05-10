@@ -25,3 +25,47 @@ Resources:
       Parameters:
         Environment: !Ref Environment
         TranscoderPipelineId: !GetAtt Transcoder.Outputs.TranscoderPipelineId
+
+  ApiExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: !Sub ${Environment}-ApiExecutionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:GetBucketLocation
+            Resource:
+            - !Sub arn:aws:s3:::${Transcoder.Outputs.TranscoderBucket}
+          - Effect: Allow
+            Action:
+            - s3:PutObject
+            Resource:
+            - !Sub arn:aws:s3:::${Transcoder.Outputs.TranscoderBucket}/*
+          - Effect: Allow
+            Action:
+            - states:StartExecution
+            Resource:
+            - !GetAtt StateMachine.Outputs.TranscoderStateMachineArn
+          - Effect: Allow
+            Action:
+            - states:DescribeExecution
+            Resource:
+            - !Sub ${StateMachine.Outputs.TranscoderStateMachineExecutionBaseArn}*
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+Outputs:
+  TranscoderBucket:
+    Value: !GetAtt Transcoder.Outputs.TranscoderBucket

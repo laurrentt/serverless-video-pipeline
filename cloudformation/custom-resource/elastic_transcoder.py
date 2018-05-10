@@ -25,7 +25,7 @@ def lambda_handler(event, context):
 
 
 def _lambda_handler(event, context):
-    print("Received event: " + json.dumps(event, indent=2))
+    print("Received event: " + json.dumps(event))
 
     resource_type = event['ResourceType']
     request_type = event['RequestType']
